@@ -1,0 +1,338 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "description": "Private student learning progression, stars, badges, and weekly holiday practice tracking.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "ageGroup": {
+          "type": "string",
+          "enum": ["7-8", "9-10", "11"]
+        },
+        "avatarId": {
+          "type": "string",
+          "enum": ["fox", "owl", "panda", "astronaut", "explorer", "koala"]
+        },
+        "xp": {
+          "type": "integer"
+        },
+        "unlockedLevel": {
+          "type": "integer"
+        },
+        "levelStars": {
+          "type": "array"
+        },
+        "badges": {
+          "type": "array"
+        },
+        "activeWeekKey": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 16,
+          "pattern": "^[0-9]{4}-W[0-9]{2}$"
+        },
+        "weekDaysCompleted": {
+          "type": "array"
+        },
+        "weeklyXp": {
+          "type": "integer"
+        },
+        "weeksCompletedCount": {
+          "type": "integer"
+        },
+        "totalSessions": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "ageGroup",
+        "avatarId",
+        "xp",
+        "unlockedLevel",
+        "levelStars",
+        "badges",
+        "activeWeekKey",
+        "weekDaysCompleted",
+        "weeklyXp",
+        "weeksCompletedCount",
+        "totalSessions",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public, PII-free shared leaderboard entry for students.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "nickname": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "avatarId": {
+          "type": "string",
+          "enum": ["fox", "owl", "panda", "astronaut", "explorer", "koala"]
+        },
+        "ageGroup": {
+          "type": "string",
+          "enum": ["7-8", "9-10", "11"]
+        },
+        "xp": {
+          "type": "integer"
+        },
+        "weeklyXp": {
+          "type": "integer"
+        },
+        "activeWeekKey": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 16,
+          "pattern": "^[0-9]{4}-W[0-9]{2}$"
+        },
+        "weekDaysCount": {
+          "type": "integer"
+        },
+        "weeksCompletedCount": {
+          "type": "integer"
+        },
+        "unlockedLevel": {
+          "type": "integer"
+        },
+        "badgesCount": {
+          "type": "integer"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "nickname",
+        "avatarId",
+        "ageGroup",
+        "xp",
+        "weeklyXp",
+        "activeWeekKey",
+        "weekDaysCount",
+        "weeksCompletedCount",
+        "unlockedLevel",
+        "badgesCount",
+        "updatedAt"
+      ]
+    },
+    "PracticeSession": {
+      "title": "PracticeSession",
+      "description": "Completed interactive level session record owned by the student.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "levelId": {
+          "type": "integer",
+          "description": "0 for diagnostic placement level, 1..6 for progressive levels."
+        },
+        "score": {
+          "type": "integer"
+        },
+        "xpEarned": {
+          "type": "integer"
+        },
+        "stars": {
+          "type": "integer"
+        },
+        "dayKey": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 12,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "weekKey": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 16,
+          "pattern": "^[0-9]{4}-W[0-9]{2}$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "levelId",
+        "score",
+        "xpEarned",
+        "stars",
+        "dayKey",
+        "weekKey",
+        "createdAt"
+      ]
+    },
+    "GameSuggestion": {
+      "title": "GameSuggestion",
+      "description": "Community game idea submitted by a student or family for EnglishCamp.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorNickname": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "authorAvatarId": {
+          "type": "string",
+          "enum": ["fox", "owl", "panda", "astronaut", "explorer", "koala"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "category": {
+          "type": "string",
+          "enum": ["vocabulario", "pronunciacion", "lectura", "memoria", "aventura"]
+        },
+        "ageGroup": {
+          "type": "string",
+          "enum": ["7-8", "9-10", "11"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 280
+        },
+        "votesCount": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "authorUid",
+        "authorNickname",
+        "authorAvatarId",
+        "title",
+        "category",
+        "ageGroup",
+        "description",
+        "votesCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SuggestionVote": {
+      "title": "SuggestionVote",
+      "description": "Single-user vote receipt preventing duplicate votes on a game suggestion.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "suggestionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "suggestionId",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/StudentProfile"
+      },
+      "description": "Private student profile and detailed progression state."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/PracticeSession"
+      },
+      "description": "Student practice session history logs."
+    },
+    "/users/{userId}/suggestionVotes/{suggestionId}": {
+      "schema": {
+        "$ref": "#/entities/SuggestionVote"
+      },
+      "description": "Private index of game suggestions upvoted by the student."
+    },
+    "/leaderboard/{userId}": {
+      "schema": {
+        "$ref": "#/entities/LeaderboardEntry"
+      },
+      "description": "Shared classroom/holiday leaderboard without PII."
+    },
+    "/gameSuggestions/{suggestionId}": {
+      "schema": {
+        "$ref": "#/entities/GameSuggestion"
+      },
+      "description": "Shared student game suggestions and ideas wall without PII."
+    },
+    "/gameSuggestions/{suggestionId}/votes/{voterId}": {
+      "schema": {
+        "$ref": "#/entities/SuggestionVote"
+      },
+      "description": "Per-suggestion voter receipts enforcing 1 vote per user."
+    }
+  }
+}

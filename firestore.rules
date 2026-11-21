@@ -1,0 +1,343 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection check endpoint
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidAgeGroup(val) {
+      return val is string && (val == '7-8' || val == '9-10' || val == '11');
+    }
+    function isValidAvatar(val) {
+      return val is string && (
+        val == 'fox' || val == 'owl' || val == 'panda' ||
+        val == 'astronaut' || val == 'explorer' || val == 'koala'
+      );
+    }
+    function isValidWeekKey(val) {
+      return val is string && val.size() >= 6 && val.size() <= 16 && val.matches('^[0-9]{4}-W[0-9]{2}$');
+    }
+    function isValidDayKey(val) {
+      return val is string && val.size() == 10 && val.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    function isValidSuggestionCategory(val) {
+      return val is string && (
+        val == 'vocabulario' || val == 'pronunciacion' || val == 'lectura' ||
+        val == 'memoria' || val == 'aventura'
+      );
+    }
+
+    // Student Profile Validation Blueprint
+    function isValidStudentProfile(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'ageGroup', 'avatarId', 'xp', 'unlockedLevel',
+        'levelStars', 'badges', 'activeWeekKey', 'weekDaysCompleted',
+        'weeklyXp', 'weeksCompletedCount', 'totalSessions', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'displayName', 'email', 'ageGroup', 'avatarId', 'xp', 'unlockedLevel',
+        'levelStars', 'badges', 'activeWeekKey', 'weekDaysCompleted',
+        'weeklyXp', 'weeksCompletedCount', 'totalSessions', 'createdAt', 'updatedAt'
+      ])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 40
+      && (!data.keys().hasAny(['email']) || (data.email is string && data.email.size() <= 120))
+      && isValidAgeGroup(data.ageGroup)
+      && isValidAvatar(data.avatarId)
+      && data.xp is int && data.xp >= 0 && data.xp <= 1000000
+      && data.unlockedLevel is int && data.unlockedLevel >= 1 && data.unlockedLevel <= 6
+      && data.levelStars is list && data.levelStars.size() == 6
+      && data.levelStars[0] is int && data.levelStars[0] >= 0 && data.levelStars[0] <= 3
+      && data.levelStars[1] is int && data.levelStars[1] >= 0 && data.levelStars[1] <= 3
+      && data.levelStars[2] is int && data.levelStars[2] >= 0 && data.levelStars[2] <= 3
+      && data.levelStars[3] is int && data.levelStars[3] >= 0 && data.levelStars[3] <= 3
+      && data.levelStars[4] is int && data.levelStars[4] >= 0 && data.levelStars[4] <= 3
+      && data.levelStars[5] is int && data.levelStars[5] >= 0 && data.levelStars[5] <= 3
+      && data.badges is list && data.badges.size() <= 20
+      && (data.badges.size() == 0 || (data.badges[0] is string && data.badges[0].size() <= 40))
+      && isValidWeekKey(data.activeWeekKey)
+      && data.weekDaysCompleted is list && data.weekDaysCompleted.size() <= 7
+      && (data.weekDaysCompleted.size() == 0 || isValidDayKey(data.weekDaysCompleted[0]))
+      && data.weeklyXp is int && data.weeklyXp >= 0 && data.weeklyXp <= 100000
+      && data.weeksCompletedCount is int && data.weeksCompletedCount >= 0 && data.weeksCompletedCount <= 500
+      && data.totalSessions is int && data.totalSessions >= 0 && data.totalSessions <= 50000
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    // Leaderboard Validation Blueprint (Zero PII)
+    function isValidLeaderboardEntry(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'nickname', 'avatarId', 'ageGroup', 'xp', 'weeklyXp',
+        'activeWeekKey', 'weekDaysCount', 'weeksCompletedCount',
+        'unlockedLevel', 'badgesCount', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'nickname', 'avatarId', 'ageGroup', 'xp', 'weeklyXp',
+        'activeWeekKey', 'weekDaysCount', 'weeksCompletedCount',
+        'unlockedLevel', 'badgesCount', 'updatedAt'
+      ])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 30
+      && isValidAvatar(data.avatarId)
+      && isValidAgeGroup(data.ageGroup)
+      && data.xp is int && data.xp >= 0 && data.xp <= 1000000
+      && data.weeklyXp is int && data.weeklyXp >= 0 && data.weeklyXp <= 100000
+      && isValidWeekKey(data.activeWeekKey)
+      && data.weekDaysCount is int && data.weekDaysCount >= 0 && data.weekDaysCount <= 7
+      && data.weeksCompletedCount is int && data.weeksCompletedCount >= 0 && data.weeksCompletedCount <= 500
+      && data.unlockedLevel is int && data.unlockedLevel >= 1 && data.unlockedLevel <= 6
+      && data.badgesCount is int && data.badgesCount >= 0 && data.badgesCount <= 20
+      && data.updatedAt is timestamp;
+    }
+
+    // Practice Session Validation Blueprint
+    function isValidPracticeSession(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'levelId', 'score', 'xpEarned', 'stars', 'dayKey', 'weekKey', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'levelId', 'score', 'xpEarned', 'stars', 'dayKey', 'weekKey', 'createdAt'
+      ])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.levelId is int && data.levelId >= 0 && data.levelId <= 6
+      && data.score is int && data.score >= 0 && data.score <= 6
+      && data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 500
+      && data.stars is int && data.stars >= 1 && data.stars <= 3
+      && isValidDayKey(data.dayKey)
+      && isValidWeekKey(data.weekKey)
+      && data.createdAt is timestamp;
+    }
+
+    // Game Suggestion Validation Blueprint (Zero PII)
+    function isValidGameSuggestion(data) {
+      return data.keys().hasAll([
+        'authorUid', 'authorNickname', 'authorAvatarId', 'title', 'category',
+        'ageGroup', 'description', 'votesCount', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'authorUid', 'authorNickname', 'authorAvatarId', 'title', 'category',
+        'ageGroup', 'description', 'votesCount', 'createdAt', 'updatedAt'
+      ])
+      && data.authorUid is string && isValidId(data.authorUid)
+      && data.authorNickname is string && data.authorNickname.size() >= 1 && data.authorNickname.size() <= 30
+      && isValidAvatar(data.authorAvatarId)
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 80
+      && isValidSuggestionCategory(data.category)
+      && isValidAgeGroup(data.ageGroup)
+      && data.description is string && data.description.size() >= 5 && data.description.size() <= 280
+      && data.votesCount is int && data.votesCount >= 0 && data.votesCount <= 50000
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    // Suggestion Vote Receipt Blueprint
+    function isValidSuggestionVote(data, voterId, suggestionId) {
+      return data.keys().hasAll(['uid', 'suggestionId', 'createdAt'])
+      && data.keys().hasOnly(['uid', 'suggestionId', 'createdAt'])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == voterId
+      && data.suggestionId is string && data.suggestionId == suggestionId && isValidId(data.suggestionId)
+      && data.createdAt is timestamp;
+    }
+
+    // Private Student Profiles
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false; // Never allow listing private profiles
+
+      allow create: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidStudentProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidStudentProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Update profile preferences
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'ageGroup', 'avatarId', 'updatedAt'])
+          ||
+          // Action 2: Record completed practice progress
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'xp', 'unlockedLevel', 'levelStars', 'badges', 'activeWeekKey',
+            'weekDaysCompleted', 'weeklyXp', 'weeksCompletedCount', 'totalSessions', 'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+
+      // Practice Sessions Subcollection (Master Gate checks parent user exists after batch)
+      match /sessions/{sessionId} {
+        allow get: if isValidId(userId) && isValidId(sessionId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(sessionId)
+          && isVerifiedUser()
+          && isOwner(userId)
+          && isValidPracticeSession(incoming(), userId)
+          && incoming().createdAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId));
+
+        allow update, delete: if false;
+      }
+
+      // User's upvoted suggestion receipts
+      match /suggestionVotes/{suggestionId} {
+        allow get: if isValidId(userId) && isValidId(suggestionId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(suggestionId)
+          && isVerifiedUser()
+          && isOwner(userId)
+          && isValidSuggestionVote(incoming(), userId, suggestionId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && existsAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(userId));
+
+        allow update: if false;
+
+        allow delete: if isValidId(userId)
+          && isValidId(suggestionId)
+          && isVerifiedUser()
+          && isOwner(userId)
+          && !existsAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(userId));
+      }
+    }
+
+    // Shared Classroom / Holiday Leaderboard (Zero PII)
+    match /leaderboard/{userId} {
+      allow get: if isValidId(userId) && isSignedIn();
+      allow list: if isSignedIn() && resource.data.xp >= 0;
+
+      allow create: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidLeaderboardEntry(incoming(), userId)
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidLeaderboardEntry(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'nickname', 'avatarId', 'ageGroup', 'updatedAt'
+          ])
+          ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'xp', 'weeklyXp', 'activeWeekKey', 'weekDaysCount',
+            'weeksCompletedCount', 'unlockedLevel', 'badgesCount', 'updatedAt'
+          ])
+          ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'nickname', 'avatarId', 'ageGroup', 'xp', 'weeklyXp', 'activeWeekKey',
+            'weekDaysCount', 'weeksCompletedCount', 'unlockedLevel', 'badgesCount', 'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+    }
+
+    // Shared Game Suggestions & Ideas Wall (Zero PII)
+    match /gameSuggestions/{suggestionId} {
+      allow get: if isValidId(suggestionId) && isSignedIn();
+      allow list: if isSignedIn() && resource.data.votesCount >= 0;
+
+      allow create: if isValidId(suggestionId)
+        && isVerifiedUser()
+        && isValidGameSuggestion(incoming())
+        && incoming().authorUid == request.auth.uid
+        && incoming().votesCount == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(suggestionId)
+        && isVerifiedUser()
+        && isValidGameSuggestion(incoming())
+        && incoming().authorUid == existing().authorUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['votesCount', 'updatedAt'])
+        && (
+          // Action 1: Add 1 vote atomically with voter receipt
+          (
+            incoming().votesCount == existing().votesCount + 1
+            && !exists(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+          )
+          ||
+          // Action 2: Remove 1 vote atomically with voter receipt deletion
+          (
+            incoming().votesCount == existing().votesCount - 1
+            && exists(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+            && !existsAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+          )
+        );
+
+      allow delete: if isValidId(suggestionId)
+        && isVerifiedUser()
+        && existing().authorUid == request.auth.uid;
+
+      // Per-suggestion vote receipt subcollection
+      match /votes/{voterId} {
+        allow get: if isValidId(suggestionId) && isValidId(voterId) && isOwner(voterId);
+        allow list: if false;
+
+        allow create: if isValidId(suggestionId)
+          && isValidId(voterId)
+          && isVerifiedUser()
+          && isOwner(voterId)
+          && isValidSuggestionVote(incoming(), voterId, suggestionId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/gameSuggestions/$(suggestionId))
+          && getAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)).data.votesCount
+             == get(/databases/$(database)/documents/gameSuggestions/$(suggestionId)).data.votesCount + 1;
+
+        allow update: if false;
+
+        allow delete: if isValidId(suggestionId)
+          && isValidId(voterId)
+          && isVerifiedUser()
+          && isOwner(voterId)
+          && exists(/databases/$(database)/documents/gameSuggestions/$(suggestionId))
+          && getAfter(/databases/$(database)/documents/gameSuggestions/$(suggestionId)).data.votesCount
+             == get(/databases/$(database)/documents/gameSuggestions/$(suggestionId)).data.votesCount - 1;
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "EnglishCamp",
+  "description": "Aplicación educativa de inglés con juegos interactivos, niveles progresivos, retos semanales de 3 días y tablero de clasificación compartido para niños de 7 a 11 años en vacaciones.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
